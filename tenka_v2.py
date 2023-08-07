@@ -32,10 +32,10 @@ jidori_img= response.jidori_img
 app = Flask(__name__)
 
 #LINE Acces Token
-LINE_CHANNEL_ACCESS_TOKEN = os.environ["LINE_CHANNEL_ACCESS_TOKEN"]
+LINE_CHANNEL_ACCESS_TOKEN = os.getenv["LINE_CHANNEL_ACCESS_TOKEN"]
 
 #LINE Channel Secret
-LINE_CHANNEL_SECRET = os.environ["LINE_CHANNEL_SECRET"]
+LINE_CHANNEL_SECRET = os.getenv["LINE_CHANNEL_SECRET"]
 
 line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
