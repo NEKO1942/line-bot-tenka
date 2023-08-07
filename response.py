@@ -14,6 +14,15 @@ place_recommend= [
 music_recommend = [
     {"title":"アルストロメリア/VERY BERRY LOVE","url":"https://open.spotify.com/intl-ja/track/7gzthuIzXzuEkd4YQXTOLk?si=04ed64a0278741a7"},
     {"title":"アルストロメリア/	Give me some more...","url":"https://open.spotify.com/intl-ja/track/1xPgiEVUAqnK8akH4rynmR?si=5819908de07f4e1b"},
+    {"title":"アルストロメリア/パステルカラー パスカラカラー","url":"https://open.spotify.com/intl-ja/track/052XKj7KV8spjLd8qAawym?si=52a5ff71dd1c489e"},
+    {"title":"アルストロメリア/ラブ・ボナペティート","url":"https://open.spotify.com/intl-ja/track/0Mr2zkWpiKi3ygTicq0vZM?si=58e9ff5ecb42400f"},
+    {"title":"アルストロメリア/ダブル・イフェクト","url":"https://open.spotify.com/intl-ja/track/6eAvBWKdBDsO8ZvXWCJGCt?si=bfc2abf973b747fc"},
+    {"title":"アルストロメリア/Anniversary","url":"https://open.spotify.com/intl-ja/track/5AInollX0dijwKBVlMpmvc?si=8cf725b678a34bc4"},
+    {"title":"アルストロメリア/Bloomy!","url":"https://open.spotify.com/intl-ja/track/45PEMdEs1ohcHoyQ9u7kEf?si=ce482a3c2fe04258"},
+    {"title":"アルストロメリア/Love Addiction","url":"https://open.spotify.com/intl-ja/track/4mbsHpV6laiqSTv4Pgmen3?si=f296e554f6194544"},
+    {"title":"アルストロメリア/アルストロメリア","url":"https://open.spotify.com/intl-ja/track/0axy4UY8KsxBUxgytSeYx4?si=12f49eccb4274585"},
+    {"title":"アルストロメリア/ハピリリ","url":"https://open.spotify.com/intl-ja/track/6EbppJnv3forKsWUP8Oa7K?si=abb9ca9efcc64fce"},
+    {"title":"イルミネーションスターズ×アルストロメリア×シーズ/Secret utopIA","url":"https://open.spotify.com/intl-ja/track/3TE8TVyNEPutMardTtgl62?si=a1b6a235912944a6"},
 ]
 
 restaurant_recommend = [
