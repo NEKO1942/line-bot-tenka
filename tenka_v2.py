@@ -234,11 +234,16 @@ def handle_message(event):
             )
 
     elif ("おすすめ" in event.message.text or "オススメ" in event.message.text) and any(keyword in event.message.text for keyword in ["飲食店", "レストラン"]):
-        sendmsg = "おすすめの代々木上原周辺の飲食店は"+"\n"+restaurant_recommend[random.randrange(len(restaurant_recommend))] +"だよ……"
+        random_restaurant = restaurant_recommend[random.randrange(len(restaurant_recommend))]
+        title = random_restaurant["title"]
+        url = random_restaurant["url"]
+        sendmsg = "おすすめの代々木上原周辺の飲食店は"+"\n"+title +"だよ〜"
 
         line_bot_api.reply_message(
                     event.reply_token,
-                    TextSendMessage(text = sendmsg)
+                    [TextSendMessage(text = sendmsg),
+                    TextSendMessage(text=url)
+                    ]
             )
 
 
