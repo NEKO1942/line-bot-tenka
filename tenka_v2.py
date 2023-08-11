@@ -7,7 +7,7 @@ from linebot.exceptions import (
     InvalidSignatureError
 )
 from linebot.models import (
-    FollowEvent, MessageEvent, TextMessage, TextSendMessage, ImageMessage, ImageSendMessage, TemplateSendMessage, ButtonsTemplate, PostbackTemplateAction, MessageTemplateAction, URITemplateAction
+    FollowEvent, MessageEvent, TextMessage, TextSendMessage, ImageMessage, ImageSendMessage, TemplateSendMessage, ButtonsTemplate, PostbackTemplateAction, MessageTemplateAction, URITemplateAction,FlexSendMessage,BubbleContainer, TextComponent
 )
 
 import os
@@ -21,12 +21,14 @@ from decimal import Decimal, ROUND_HALF_UP, ROUND_HALF_EVEN
 
 from city_ids import cityIDs
 import response
+from youtube_channel import channel_name,support_channel
 
 wakaranai_words = response.wakaranai_words
 place_recommend = response.place_recommend
 music_recommend = response.music_recommend
 restaurant_recommend = response.restaurant_recommend
 jidori_img= response.jidori_img
+
 
 # 軽量なウェブアプリケーションフレームワーク:Flask
 app = Flask(__name__)
@@ -246,25 +248,52 @@ def handle_message(event):
                     ]
             )
 
+    elif "の動画" in event.message.text:
+        ytname = event.message.text.replace("の動画", "")
+        channel_data = channel_name.get(ytname)
 
-
-
+        if channel_data:
+            channel_id = channel_data
+            video_flex = youtube_flex(channel_id)
+                
+            line_bot_api.reply_message(
+            event.reply_token,
+            [
+                FlexSendMessage(alt_text="YouTube Video", contents=video_flex),
+            ]
+            )
+        else:
+            video_flex_error = video_error()
+            error_msg = "あ、あの… ちょっと、チャンネル情報が、見つからなかったみたい… 別の名前で、試してみたら、…う、うまくいくかな…？"
+            line_bot_api.reply_message(
+            event.reply_token,
+            [
+            FlexSendMessage(alt_text="error_video", contents=video_flex_error),
+            TextSendMessage(text=error_msg)
+            ]
+            )
+    
+    elif event.message.text == "投稿者一覧":
+        sendmsg = "\n".join(support_channel)
+        
+        line_bot_api.reply_message(
+                    event.reply_token,
+                    TextSendMessage(text = sendmsg)
+        )
+    
 
 
 # 条件分岐その３: それ以外
     else:
-            random_num = random.randrange(10)
-            if random_num < 1:
-                sendmsg = wakaranai_words[2]
-            elif random_num < 6:
-                sendmsg = wakaranai_words[1]
-            else:
-                sendmsg = wakaranai_words[0]
+            sendmsg = random.choice(wakaranai_words)
 
             line_bot_api.reply_message(
                 event.reply_token,
                 TextSendMessage(text = sendmsg)
             )
+
+
+
 
 
 
@@ -312,6 +341,158 @@ def weather_data(city_id):
     return weather_detail,weather_detail_tomorrow,chancerain_morning,chancerain_daytime,chancerain_night,chancerain_morning_tomorrow,chancerain_daytime_tomorrow,chancerain_night_tomorrow
 
 
+
+
+def get_youtube_video(channel_id):
+    youtube_api = os.getenv("youtube_api")
+    API_URL = f"https://www.googleapis.com/youtube/v3/search?part=snippet&channelId={channel_id}&maxResults=10&order=date&type=video&key={youtube_api}"
+    res = requests.get(API_URL)
+    data = json.loads(res.text)
+    video_data = []
+
+    for item in data["items"]:
+        video_title = item["snippet"]["title"]
+        thumbnail_url = item["snippet"]["thumbnails"]["medium"]["url"]
+        video_URL = "https://www.youtube.com/watch?v=" + item["id"]["videoId"]
+        channel_title = item["snippet"]["channelTitle"]
+
+        video_info = {
+            "title": video_title,
+            "thumbnail": thumbnail_url,
+            "video_URL": video_URL,
+            "channel_title": channel_title
+        }
+
+        video_data.append(video_info)
+        
+
+    return video_data
+
+
+def create_video_bubble(video_title, thumbnail_url, video_URL, channel_title):
+    bubble = {
+        "type": "bubble",
+        "hero": {
+            "type": "image",
+            "size": "full",
+            "aspectRatio": "16:9",
+            "aspectMode": "cover",
+            "url": thumbnail_url
+        },
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "spacing": "md",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": video_title,
+                    "wrap": True,
+                    "weight": "bold",
+                    "size": "lg"
+                },
+                {
+                    "type": "box",
+                    "layout": "baseline",
+                    "contents": [
+                        {
+                            "type": "text",
+                            "text": channel_title,
+                            "weight": "regular",
+                            "size": "sm",
+                            "flex": 0,
+                            "wrap": True
+                        }
+                    ]
+                }
+            ]
+        },
+        "footer": {
+            "type": "box",
+            "layout": "vertical",
+            "spacing": "sm",
+            "contents": [
+                {
+                    "type": "button",
+                    "style": "primary",
+                    "action": {
+                        "type": "uri",
+                        "label": "動画を見る",
+                        "uri": video_URL
+                    }
+                }
+            ]
+        }
+    }
+    return bubble
+
+
+def youtube_flex(channel_id):
+    video_data = get_youtube_video(channel_id)
+    video_bubbles = []
+
+    for video in video_data:
+        bubble = create_video_bubble(video["title"], video["thumbnail"], video["video_URL"], video["channel_title"])
+        video_bubbles.append(bubble)
+
+    video_flex = {
+        "type": "carousel",
+        "contents": video_bubbles
+    }
+    return video_flex
+
+def video_error():
+    video_flex_error ={
+  "type": "carousel",
+  "contents": [
+    {
+      "type": "bubble",
+      "hero": {
+        "type": "image",
+        "size": "full",
+        "aspectRatio": "800:641",
+        "aspectMode": "cover",
+        "url": "https://1.bp.blogspot.com/-d3vDLBoPktU/WvQHWMBRhII/AAAAAAABL6E/Grg-XGzr9jEODAxkRcbqIXu-mFA9gTp3wCLcBGAs/s800/internet_404_page_not_found.png"
+      },
+      "body": {
+        "type": "box",
+        "layout": "vertical",
+        "spacing": "md",
+        "contents": [
+          {
+            "type": "text",
+            "text": "エラーです！",
+            "wrap": True,
+            "weight": "bold",
+            "size": "lg"
+          }
+        ]
+      },
+      "footer": {
+        "type": "box",
+        "layout": "horizontal",
+        "spacing": "none",
+        "contents": [
+          {
+            "type": "button",
+            "action": {
+              "type": "message",
+              "label": "投稿者一覧を表示する",
+              "text": "投稿者一覧"
+            },
+            "style": "primary"
+          }
+        ],
+        "margin": "none"
+      }
+    }
+  ]
+}
+    return video_flex_error
+
+
+
+    
 if __name__ == "__main__":
     port = os.getenv("PORT")
     app.run(host="0.0.0.0", port=port)
