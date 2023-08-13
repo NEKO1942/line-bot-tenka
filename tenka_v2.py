@@ -18,6 +18,8 @@ import json
 from datetime import datetime
 from math import ceil
 from decimal import Decimal, ROUND_HALF_UP, ROUND_HALF_EVEN
+from bs4 import BeautifulSoup
+
 
 from city_ids import cityIDs
 import response
@@ -74,26 +76,51 @@ def handle_message(event):
     if event.message.text == "今期アニメ":
         year = datetime.now().year
         course = ceil(datetime.now().month / 3)
-        data = callapi(year,course)
-        for i in range(len(data)):
-            sendmsg += data[i]["title"] + "\n"
-
+        anime_flex_list = generate_anime_flex(year, course)
+                
         line_bot_api.reply_message(
-                    event.reply_token,
-                    TextSendMessage(text = sendmsg)
-            )
+            event.reply_token,
+            [
+            FlexSendMessage(alt_text="Anime Flex 1", contents=anime_flex_list[0]),
+            FlexSendMessage(alt_text="Anime Flex 2", contents=anime_flex_list[1]),
+            FlexSendMessage(alt_text="Anime Flex 3", contents=anime_flex_list[2]),
+            FlexSendMessage(alt_text="Anime Flex 4", contents=anime_flex_list[3]),
+            FlexSendMessage(alt_text="Anime Flex 5", contents=anime_flex_list[4]),
+                    ]
+                )
     elif event.message.text == "来期アニメ":
         year = datetime.now().year
         #四半期に変換
         year, course = checkcourse(datetime.now().year, ceil(datetime.now().month / 3)+1)
-        data = callapi(year,course)
-        for i in range(len(data)):
-            sendmsg += data[i]["title"] + "\n"
+        anime_flex_list = generate_anime_flex(year, course)
 
         line_bot_api.reply_message(
-                    event.reply_token,
-                    TextSendMessage(text = sendmsg)
-            )
+            event.reply_token,
+            [
+            FlexSendMessage(alt_text="Anime Flex 1", contents=anime_flex_list[0]),
+            FlexSendMessage(alt_text="Anime Flex 2", contents=anime_flex_list[1]),
+            FlexSendMessage(alt_text="Anime Flex 3", contents=anime_flex_list[2]),
+            FlexSendMessage(alt_text="Anime Flex 4", contents=anime_flex_list[3]),
+            FlexSendMessage(alt_text="Anime Flex 5", contents=anime_flex_list[4]),
+                    ]
+                )
+    elif event.message.text == "前期アニメ":
+        year = datetime.now().year
+        #四半期に変換
+        year, course = checkcourse(datetime.now().year, ceil(datetime.now().month / 3)-1)
+        anime_flex_list = generate_anime_flex(year, course)
+        
+        line_bot_api.reply_message(
+            event.reply_token,
+            [
+            FlexSendMessage(alt_text="Anime Flex 1", contents=anime_flex_list[0]),
+            FlexSendMessage(alt_text="Anime Flex 2", contents=anime_flex_list[1]),
+            FlexSendMessage(alt_text="Anime Flex 3", contents=anime_flex_list[2]),
+            FlexSendMessage(alt_text="Anime Flex 4", contents=anime_flex_list[3]),
+            FlexSendMessage(alt_text="Anime Flex 5", contents=anime_flex_list[4]),
+                    ]
+                )
+    
     elif re.search("自撮り", event.message.text):
         sendmsg = jidori_img[random.randrange(len(jidori_img))]
 
@@ -114,17 +141,6 @@ def handle_message(event):
                     [TextSendMessage(text = sendmsg),
                     ImageSendMessage(original_content_url = sendimg,preview_image_url = sendimg)
                     ]
-            )
-    elif event.message.text == "前期アニメ":
-        year = datetime.now().year
-        year, course = checkcourse(datetime.now().year, ceil(datetime.now().month / 3)-1)
-        data = callapi(year,course)
-        for i in range(len(data)):
-            sendmsg += data[i]["title"] + "\n"
-
-        line_bot_api.reply_message(
-                    event.reply_token,
-                    TextSendMessage(text = sendmsg)
             )
     elif "の天気" in event.message.text:
         place_name = event.message.text.replace("の天気", "")
@@ -247,31 +263,35 @@ def handle_message(event):
                     TextSendMessage(text=url)
                     ]
             )
+    
+    elif re.search(r"^(おすすめの)?(.*?)の動画$", event.message.text):
+        ytname = re.search(r"^(おすすめの)?(.*?)の動画$", event.message.text)
+        if ytname:
+            ytname = ytname.group(2)
+            channel_data = channel_name.get(ytname)
 
-    elif "の動画" in event.message.text:
-        ytname = event.message.text.replace("の動画", "")
-        channel_data = channel_name.get(ytname)
-
-        if channel_data:
-            channel_id = channel_data
-            video_flex = youtube_flex(channel_id)
+            if channel_data:
+                channel_id = channel_data
+                video_flex = youtube_flex(channel_id)
                 
-            line_bot_api.reply_message(
-            event.reply_token,
-            [
-                FlexSendMessage(alt_text="YouTube Video", contents=video_flex),
-            ]
-            )
-        else:
-            video_flex_error = video_error()
-            error_msg = "あ、あの… ちょっと、チャンネル情報が、見つからなかったみたい… 別の名前で、試してみたら、…う、うまくいくかな…？"
-            line_bot_api.reply_message(
-            event.reply_token,
-            [
-            FlexSendMessage(alt_text="error_video", contents=video_flex_error),
-            TextSendMessage(text=error_msg)
-            ]
-            )
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    [
+                        FlexSendMessage(alt_text="YouTube Video", contents=video_flex),
+                    ]
+                )
+            else:
+                video_flex_error = video_error()
+                error_msg = "あ、あの… ちょっと、チャンネル情報が、見つからなかったみたい… 別の名前で、試してみたら、…う、うまくいくかな…？"
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    [
+                        FlexSendMessage(alt_text="error_video", contents=video_flex_error),
+                        TextSendMessage(text=error_msg),
+                    ]
+                )
+    
+    
     
     elif event.message.text == "投稿者一覧":
         sendmsg = "\n".join(support_channel)
@@ -280,7 +300,13 @@ def handle_message(event):
                     event.reply_token,
                     TextSendMessage(text = sendmsg)
         )
-    
+    elif event.message.text == "画像":
+        official_url = "https://ar-anime.com/"
+        thumbnail_url = get_thumbnail_url(official_url)
+        line_bot_api.reply_message(
+                    event.reply_token,
+                    TextSendMessage(text = thumbnail_url)
+        )
 
 
 # 条件分岐その３: それ以外
@@ -292,16 +318,169 @@ def handle_message(event):
                 TextSendMessage(text = sendmsg)
             )
 
+cache = {}
 
+def clear_cache():
+    # キャッシュをクリアする処理
+    now = datetime.now()
+    if now.day == 1:
+        cache.clear()
 
+def get_cached_thumbnail(official_url):
+    if official_url in cache:
+        return cache[official_url]
+    else:
+        response = requests.get(official_url)
+        soup = BeautifulSoup(response.content, 'html.parser')
+        meta_tags =  soup.select('[property="og:image"]')
 
+        if meta_tags:
+            thumbnail_url = meta_tags[0]['content']
+            if thumbnail_url.startswith("http:"):
+                thumbnail_url = "https:" + thumbnail_url[5:]
+            cache[official_url] = thumbnail_url
+            return thumbnail_url
 
+    return None
 
-def callapi(year, course):
+def get_thumbnail_url(official_url):
+    return get_cached_thumbnail(official_url)
+    
+
+#def get_thumbnail_url(official_url):
+    response = requests.get(official_url)
+    soup = BeautifulSoup(response.content, 'html.parser')
+    meta_tags =  soup.select('[property="og:image"]')
+
+    if meta_tags:
+        thumbnail_url = meta_tags[0]['content']
+        if thumbnail_url.startswith("http:"):
+            thumbnail_url = "https:" + thumbnail_url[5:]
+        return thumbnail_url
+
+    return None
+
+def get_anime_data(year, course):
     API_URL = f'https://anime-api.deno.dev/anime/v1/master/{year}/{course}'
     res = requests.get(API_URL)
     data = json.loads(res.text)
-    return data
+    anime_data = []
+
+    for item in data:
+        anime_title = item["title"]
+        product_companies = item["product_companies"]
+        #thumbnail_url = item["snippet"]["thumbnails"]["medium"]["url"]
+        official_URL = item["public_url"]
+        official_X = "https://twitter.com/" + item["twitter_account"]
+        thumbnail_url = get_thumbnail_url(official_URL)
+
+        anime_info = {
+            "title": anime_title,
+            #"thumbnail": thumbnail_url,
+            "official_URL": official_URL,
+            "official_X": official_X,
+            "product_companies":product_companies,
+            "thumbnail_url": thumbnail_url
+
+        }
+
+        anime_data.append(anime_info)
+        
+
+    return anime_data
+
+def create_anime_bubble(anime_title, official_URL, official_X,product_companies,thumbnail_url):
+    if not product_companies:
+        product_companies = "情報なし"  # デフォルトのテキストを設定
+    if not thumbnail_url:
+        thumbnail_url = "https://edogawa-fa.jp/junior/Photo/2008/Photo/NO_DATA.jpg"  # デフォルトのテキストを設定
+
+    bubble =  {
+      "type": "bubble",
+      "hero": {
+        "type": "image",
+        "size": "full",
+        "aspectRatio": "1200:630",
+        "aspectMode": "cover",
+        "url": thumbnail_url
+      },
+      "body": {
+        "type": "box",
+        "layout": "vertical",
+        "spacing": "sm",
+        "contents": [
+          {
+            "type": "text",
+            "text": anime_title,
+            "wrap": True,
+            "weight": "bold",
+            "size": "xl"
+          },
+          {
+            "type": "box",
+            "layout": "baseline",
+            "contents": [
+              {
+                "type": "text",
+                "text": product_companies,
+                "wrap": True,
+                "weight": "regular",
+                "size": "xs",
+                "flex": 0
+              }
+            ]
+          }
+        ]
+      },
+      "footer": {
+        "type": "box",
+        "layout": "vertical",
+        "spacing": "sm",
+        "contents": [
+          {
+            "type": "button",
+            "style": "primary",
+            "action": {
+              "type": "uri",
+              "label": "公式サイト",
+              "uri": official_URL
+            }
+          },
+          {
+            "type": "button",
+            "action": {
+              "type": "uri",
+              "label": "公式X",
+              "uri": official_X
+            },
+            "style": "secondary"
+          }
+        ]
+      }
+    }
+    return bubble
+
+def generate_anime_flex(year, course):
+    anime_data = get_anime_data(year, course)
+    anime_flex_contents_list = []
+    
+    chunk_size = 12
+    for i in range(0, len(anime_data), chunk_size):
+        chunk = anime_data[i:i + chunk_size]
+        anime_bubbles = []
+
+        for anime in chunk:
+            bubble = create_anime_bubble(anime["title"], anime["official_URL"], anime["official_X"], anime["product_companies"],anime["thumbnail_url"])
+            anime_bubbles.append(bubble)
+        
+        anime_flex_contents = {
+            "type": "carousel",
+            "contents": anime_bubbles
+        }
+        anime_flex_contents_list.append(anime_flex_contents)
+
+    return anime_flex_contents_list
+
 
 def checkcourse(year, course):
     # courseの値が5になったら、次の年の1期になるので、年を1増やす。一方で、courseの値が0になったら、前の年の4期になるので、年を1減らす。
@@ -492,7 +671,6 @@ def video_error():
 
 
 
-    
 if __name__ == "__main__":
     port = os.getenv("PORT")
     app.run(host="0.0.0.0", port=port)
