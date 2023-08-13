@@ -331,7 +331,7 @@ def get_cached_thumbnail(official_url):
         return cache[official_url]
     else:
         response = requests.get(official_url)
-        soup = BeautifulSoup(response.content, 'html.parser')
+        soup = BeautifulSoup(response.content, "lxml")
         meta_tags =  soup.select('[property="og:image"]')
 
         if meta_tags:
