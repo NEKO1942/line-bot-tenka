@@ -3,3 +3,4 @@ flask
 openpyxl
 pandas
 beautifulsoup4
+lxml==4.9.3
