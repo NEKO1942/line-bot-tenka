@@ -5,7 +5,7 @@ services:
   #repo: https://github.com/line/line-bot-sdk-python.git
   repo: https://github.com/NEKO1942/line-bot-tenka.git
   buildCommand: pip install gunicorn -r requirements.txt
-  startCommand: gunicorn tenka_v2:app
+  startCommand: gunicorn tenka_v2:app --timeout 300
   plan: free
   autoDeploy: false
   envVars:
