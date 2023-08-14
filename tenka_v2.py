@@ -19,7 +19,7 @@ from datetime import datetime
 from math import ceil
 from decimal import Decimal, ROUND_HALF_UP, ROUND_HALF_EVEN
 from bs4 import BeautifulSoup
-
+from concurrent.futures import ThreadPoolExecutor
 
 from city_ids import cityIDs
 import response
@@ -318,15 +318,15 @@ def handle_message(event):
                 TextSendMessage(text = sendmsg)
             )
 
-cache = {}
+#cache = {}
 
-def clear_cache():
+#def clear_cache():
     # キャッシュをクリアする処理
     now = datetime.now()
     if now.day == 1:
         cache.clear()
 
-def get_cached_thumbnail(official_url):
+#def get_cached_thumbnail(official_url):
     if official_url in cache:
         return cache[official_url]
     else:
@@ -343,7 +343,7 @@ def get_cached_thumbnail(official_url):
 
     return None
 
-def get_thumbnail_url(official_url):
+#def get_thumbnail_url(official_url):
     return get_cached_thumbnail(official_url)
     
 
@@ -360,7 +360,7 @@ def get_thumbnail_url(official_url):
 
     return None
 
-def get_anime_data(year, course):
+#def get_anime_data(year, course):
     API_URL = f'https://anime-api.deno.dev/anime/v1/master/{year}/{course}'
     res = requests.get(API_URL)
     data = json.loads(res.text)
@@ -387,6 +387,75 @@ def get_anime_data(year, course):
         anime_data.append(anime_info)
         
 
+    return anime_data
+
+cache = {}
+
+def clear_cache():
+    now = datetime.now()
+    if now.day == 1:
+        cache.clear()
+
+def get_cached_thumbnail(official_url):
+    if official_url in cache:
+        return cache[official_url]
+    else:
+        thumbnail_url = fetch_thumbnail_url(official_url)
+        if thumbnail_url:
+            cache[official_url] = thumbnail_url
+            return thumbnail_url
+    return None
+
+def fetch_thumbnail_url(official_url):
+    try:
+        response = requests.get(official_url)
+        soup = BeautifulSoup(response.content, 'html.parser')
+        meta_tags = soup.select('[property="og:image"]')
+        if meta_tags:
+            thumbnail_url = meta_tags[0]['content']
+            if thumbnail_url.startswith("http:"):
+                thumbnail_url = "https:" + thumbnail_url[5:]
+            return thumbnail_url
+    except Exception as e:
+        print(f"Error fetching thumbnail for {official_url}: {str(e)}")
+    return None
+
+def get_thumbnail_url(official_url):
+    return get_cached_thumbnail(official_url)
+
+def process_anime(item):
+    anime_title = item["title"]
+    product_companies = item["product_companies"]
+    official_URL = item["public_url"]
+    official_X = "https://twitter.com/" + item["twitter_account"]
+    thumbnail_url = get_thumbnail_url(official_URL)
+
+    anime_info = {
+        "title": anime_title,
+        "official_URL": official_URL,
+        "official_X": official_X,
+        "product_companies": product_companies,
+        "thumbnail_url": thumbnail_url
+    }
+
+    return anime_info
+
+def get_anime_data(year, course):
+    API_URL = f'https://anime-api.deno.dev/anime/v1/master/{year}/{course}'
+    res = requests.get(API_URL)
+    data = json.loads(res.text)
+    
+    anime_data = []
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        futures = [executor.submit(process_anime, item) for item in data]
+        for future in futures:
+            try:
+                anime_info = future.result()
+                if anime_info:
+                    anime_data.append(anime_info)
+            except Exception as e:
+                print(f"Error processing anime: {str(e)}")
+    
     return anime_data
 
 def create_anime_bubble(anime_title, official_URL, official_X,product_companies,thumbnail_url):
