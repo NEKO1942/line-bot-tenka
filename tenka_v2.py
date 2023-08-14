@@ -318,12 +318,26 @@ def handle_message(event):
                 TextSendMessage(text = sendmsg)
             )
 
+CACHE_FILE = 'cache.json'
+
 cache = {}
 
 def clear_cache():
     now = datetime.now()
     if now.day == 1:
         cache.clear()
+        save_cache()
+
+def load_cache():
+    try:
+        with open(CACHE_FILE, 'r') as file:
+            return json.load(file)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+def save_cache():
+    with open(CACHE_FILE, 'w') as file:
+        json.dump(cache, file)
 
 def get_cached_thumbnail(official_url):
     if official_url in cache:
@@ -332,6 +346,7 @@ def get_cached_thumbnail(official_url):
         thumbnail_url = fetch_thumbnail_url(official_url)
         if thumbnail_url:
             cache[official_url] = thumbnail_url
+            save_cache()
             return thumbnail_url
     return None
 
@@ -375,7 +390,7 @@ def get_anime_data(year, course):
     data = json.loads(res.text)
     
     anime_data = []
-    with ThreadPoolExecutor(max_workers=2) as executor:
+    with ThreadPoolExecutor(max_workers=1) as executor:
         futures = [executor.submit(process_anime, item) for item in data]
         for future in futures:
             try:
