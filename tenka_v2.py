@@ -300,13 +300,6 @@ def handle_message(event):
                     event.reply_token,
                     TextSendMessage(text = sendmsg)
         )
-    elif event.message.text == "画像":
-        official_url = "https://ar-anime.com/"
-        thumbnail_url = get_thumbnail_url(official_url)
-        line_bot_api.reply_message(
-                    event.reply_token,
-                    TextSendMessage(text = thumbnail_url)
-        )
 
 
 # 条件分岐その３: それ以外
@@ -317,9 +310,11 @@ def handle_message(event):
                 event.reply_token,
                 TextSendMessage(text = sendmsg)
             )
-            
+
+
 CACHE_FILE = 'cache.json'
 
+# キャッシュを読み込む関数
 def load_cache():
     try:
         with open(CACHE_FILE, 'r') as file:
@@ -358,6 +353,35 @@ def get_cached_thumbnail(official_url):
             return thumbnail_url
 
     return None
+
+def get_anime_data(year, course):
+    API_URL = f'https://anime-api.deno.dev/anime/v1/master/{year}/{course}'
+    res = requests.get(API_URL)
+    data = json.loads(res.text)
+    anime_data = []
+
+    for item in data:
+        anime_title = item["title"]
+        product_companies = item["product_companies"]
+        #thumbnail_url = item["snippet"]["thumbnails"]["medium"]["url"]
+        official_URL = item["public_url"]
+        official_X = "https://twitter.com/" + item["twitter_account"]
+        thumbnail_url = get_cached_thumbnail(official_URL)
+
+        anime_info = {
+            "title": anime_title,
+            #"thumbnail": thumbnail_url,
+            "official_URL": official_URL,
+            "official_X": official_X,
+            "product_companies":product_companies,
+            "thumbnail_url": thumbnail_url
+
+        }
+
+        anime_data.append(anime_info)
+        
+
+    return anime_data
 
 def create_anime_bubble(anime_title, official_URL, official_X,product_companies,thumbnail_url):
     if not product_companies:
