@@ -229,7 +229,13 @@ def handle_message(event):
                     event.reply_token,
                     TextSendMessage(text = sendmsg)
         )
+    elif (event.message.type =="location"):
+        sendmsg == "位置情報を取得しました"
 
+        line_bot_api.reply_message(
+                    event.reply_token,
+                    TextSendMessage(text = sendmsg)
+        )
     elif ("おすすめ" in event.message.text or "オススメ" in event.message.text) and "観光地" in event.message.text:
         sendmsg = "おすすめの観光地は"+"\n"+place_recommend[random.randrange(len(place_recommend))] +"だよ……"
 
